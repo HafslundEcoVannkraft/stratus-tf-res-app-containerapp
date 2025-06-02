@@ -39,4 +39,5 @@ locals {
   private_dns_zone_name = local.cae_config.private_dns_zone_name
   public_dns_zone_id    = local.cae_config.public_dns_zone_id
   public_dns_zone_name  = local.cae_config.public_dns_zone_name
+
 }
