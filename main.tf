@@ -54,7 +54,7 @@ module "containerapp" {
     app_protocol = try(local.app_config.dapr.app_protocol, "http")
   } : null
 
-  tags = local.app_config.tags
+  tags = try(local.app_config.tags, null)
 
   container_app_timeouts = try(local.app_config.container_app_timeouts, {
     create = "30m"
