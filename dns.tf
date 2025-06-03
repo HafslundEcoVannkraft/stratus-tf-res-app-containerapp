@@ -12,7 +12,7 @@ resource "azurerm_private_dns_cname_record" "app" {
 resource "azurerm_dns_cname_record" "app" {
   name                = local.app_config.name
   zone_name           = local.public_dns_zone_name
-  resource_group_name = "${each.value.codename}-dns-zones-rg-${each.value.env}"
+  resource_group_name = "${var.code_name}-dns-zones-rg-${var.environment}"
   ttl                 = 300
 
   record = var.appgw_dns_name

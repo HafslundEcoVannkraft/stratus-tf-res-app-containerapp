@@ -11,9 +11,9 @@ module "containerapp" {
   template = {
     max_replicas = try(local.app_config.template.max_replicas, 10)
     min_replicas = try(local.app_config.template.min_replicas, 1)
-    command = try(local.app_config.template.command, null)
-    args = try(local.app_config.template.args, null)
-    env = can(local.app_config.template.env) ? local.app_config.template.env : []
+    command      = try(local.app_config.template.command, null)
+    args         = try(local.app_config.template.args, null)
+    env          = can(local.app_config.template.env) ? local.app_config.template.env : []
 
     containers = [
       {
