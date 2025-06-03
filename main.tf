@@ -7,9 +7,14 @@ module "containerapp" {
   container_app_environment_resource_id = local.container_app_environment_id
   revision_mode                         = local.app_config.revision_mode
 
+
   template = {
     max_replicas = try(local.app_config.template.max_replicas, 10)
     min_replicas = try(local.app_config.template.min_replicas, 1)
+    command = try(local.app_config.template.command, null)
+    args = try(local.app_config.template.args, null)
+    env = can(local.app_config.template.env) ? local.app_config.template.env : []
+
     containers = [
       {
         name   = local.app_config.name
@@ -69,5 +74,5 @@ module "containerapp" {
 
   # This is about Telemetry for Microsoft Azure Verified Module usage, not application telemetry
   # https://registry.terraform.io/providers/Azure/avm/latest/docs#enable_telemetry
-  enable_telemetry = true
+  enable_telemetry = try(local.app_config.enable_telemetry, true)
 }
