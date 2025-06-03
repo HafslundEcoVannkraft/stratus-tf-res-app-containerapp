@@ -5,7 +5,7 @@ resource "azurerm_private_dns_cname_record" "private" {
   resource_group_name = "${var.code_name}-dns-zones-rg-${var.environment}"
   ttl                 = 300
 
-  record = ["${local.container_app_environment_name}.${local.private_dns_zone.name}"]
+  record = ["${local.container_app_environment_name}.${local.private_dns_zone_name}"]
 }
 
 # Create CNAME for the Container App pointing to the public CNAME for the container app environment
@@ -15,5 +15,5 @@ resource "azurerm_private_dns_cname_record" "public" {
   resource_group_name = "${var.code_name}-dns-zones-rg-${var.environment}"
   ttl                 = 300
 
-  record = ["${local.container_app_environment_name}.stratus.hafslund.no"]
+  record = ["appgw01.stratus.hafslund.no"]
 }
