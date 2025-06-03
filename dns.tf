@@ -9,8 +9,26 @@ resource "azurerm_private_dns_cname_record" "app" {
 }
 
 # Create public dns zone CNAME for the Container App, pointing to the public A record for application gateway
+# Only create if external access is enabled and not using custom domains
 resource "azurerm_dns_cname_record" "app" {
+  count = try(local.app_config.ingress.external_enabled, true) && !contains(keys(try(local.app_config.custom_domains, {})), "domain1") ? 1 : 0
+
   name                = local.app_config.name
+  zone_name           = local.public_dns_zone_name
+  resource_group_name = "${var.code_name}-dns-zones-rg-${var.environment}"
+  ttl                 = 300
+
+  record = var.appgw_dns_name
+}
+
+# Create DNS records for custom domains if configured
+resource "azurerm_dns_cname_record" "custom_domains" {
+  for_each = {
+    for k, v in try(local.app_config.custom_domains, {}) : k => v
+    if try(local.app_config.ingress.external_enabled, true)
+  }
+
+  name                = trimsuffix(each.value.name, ".${local.public_dns_zone_name}")
   zone_name           = local.public_dns_zone_name
   resource_group_name = "${var.code_name}-dns-zones-rg-${var.environment}"
   ttl                 = 300

@@ -2,67 +2,157 @@ module "containerapp" {
   source  = "Azure/avm-res-app-containerapp/azurerm"
   version = "0.6.0"
 
+  # Required parameters
   name                                  = local.app_config.name
-  resource_group_name                   = local.container_apps_rg_name
-  container_app_environment_resource_id = local.container_app_environment_id
+  resource_group_name                   = local.container_apps_rg_name       # Sourced from remote state
+  container_app_environment_resource_id = local.container_app_environment_id # Sourced from remote state
   revision_mode                         = local.app_config.revision_mode
 
-
+  # Template configuration with comprehensive support for all properties
   template = {
-    max_replicas = try(local.app_config.template.max_replicas, 10)
-    min_replicas = try(local.app_config.template.min_replicas, 1)
-    command      = try(local.app_config.template.command, null)
-    args         = try(local.app_config.template.args, null)
-    env          = can(local.app_config.template.env) ? local.app_config.template.env : []
+    # Basic template properties
+    max_replicas    = try(local.app_config.template.max_replicas, 10)
+    min_replicas    = try(local.app_config.template.min_replicas, 1)
+    revision_suffix = try(local.app_config.template.revision_suffix, null)
 
+    # Container configuration - support all properties from YAML
     containers = [
-      {
-        name   = local.app_config.name
-        memory = try(local.app_config.template.containers[0].memory, "0.5Gi")
-        cpu    = try(local.app_config.template.containers[0].cpu, "0.25")
-        image  = try("${local.app_config.template.image_name}:${local.app_config.template.image_tag}", "${var.image_name}:${var.image_tag}")
+      for container in try(local.app_config.template.containers, [{}]) : {
+        name    = try(container.name, local.app_config.name)
+        image   = try(container.image, "${var.image_name}:${var.image_tag}") # Uses image from YAML if specified, otherwise from GitHub workflow variables
+        memory  = try(container.memory, "0.5Gi")
+        cpu     = try(container.cpu, "0.25")
+        args    = try(container.args, null)
+        command = try(container.command, null)
+
+        # Environment variables
+        env = try(container.env, null)
+
+        # Health probes - convert from YAML structure to module structure
+        liveness_probes = try([
+          for probe in container.liveness_probes : {
+            transport               = probe.transport
+            port                    = probe.port
+            path                    = try(probe.path, null)
+            host                    = try(probe.host, null)
+            initial_delay           = try(probe.initial_delay, null)
+            interval_seconds        = try(probe.interval_seconds, null)
+            timeout                 = try(probe.timeout, null)
+            failure_count_threshold = try(probe.failure_count_threshold, null)
+            header                  = try(probe.header, null)
+          }
+        ], null)
+
+        readiness_probes = try([
+          for probe in container.readiness_probes : {
+            transport               = probe.transport
+            port                    = probe.port
+            path                    = try(probe.path, null)
+            host                    = try(probe.host, null)
+            initial_delay           = try(probe.initial_delay, null)
+            interval_seconds        = try(probe.interval_seconds, null)
+            timeout                 = try(probe.timeout, null)
+            failure_count_threshold = try(probe.failure_count_threshold, null)
+            success_count_threshold = try(probe.success_count_threshold, null)
+            header                  = try(probe.header, null)
+          }
+        ], null)
+
+        startup_probe = try([
+          for probe in container.startup_probe : {
+            transport               = probe.transport
+            port                    = probe.port
+            path                    = try(probe.path, null)
+            host                    = try(probe.host, null)
+            initial_delay           = try(probe.initial_delay, null)
+            interval_seconds        = try(probe.interval_seconds, null)
+            timeout                 = try(probe.timeout, null)
+            failure_count_threshold = try(probe.failure_count_threshold, null)
+            header                  = try(probe.header, null)
+          }
+        ], null)
+
+        # Volume mounts
+        volume_mounts = try(container.volume_mounts, null)
       }
     ]
-    http_scale_rules = can(local.app_config.template.http_scale_rules) ? local.app_config.template.http_scale_rules : []
+
+    # Init containers support
+    init_containers = try(local.app_config.template.init_containers, null)
+
+    # Volume configuration
+    volumes = try(local.app_config.template.volumes, null)
+
+    # Scale rules
+    azure_queue_scale_rules = try(local.app_config.template.azure_queue_scale_rules, null)
+    http_scale_rules        = try(local.app_config.template.http_scale_rules, null)
+    tcp_scale_rules         = try(local.app_config.template.tcp_scale_rules, null)
+    custom_scale_rules      = try(local.app_config.template.custom_scale_rules, null)
   }
 
+  # Managed identities - combine system-assigned with user-assigned from YAML
   managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [module.container_app_identity_for_registry.resource_id]
+    system_assigned = try(local.app_config.managed_identities.system_assigned, true)
+    user_assigned_resource_ids = concat(
+      [module.container_app_identity_for_registry.resource_id],
+      try(local.app_config.managed_identities.user_assigned_resource_ids, [])
+    )
   }
 
-  registries = [
-    {
-      server   = "${local.container_registry_name}.azurecr.io"
-      identity = module.container_app_identity_for_registry.resource_id
-    }
-  ]
+  # Registry configuration
+  registries = concat(
+    [
+      {
+        server   = "${local.container_registry_name}.azurecr.io"
+        identity = module.container_app_identity_for_registry.resource_id
+      }
+    ],
+    try(local.app_config.registries, [])
+  )
 
+  # Ingress configuration with full support for all properties
   ingress = {
     allow_insecure_connections = try(local.app_config.ingress.allow_insecure_connections, false)
     client_certificate_mode    = try(local.app_config.ingress.client_certificate_mode, "ignore")
     target_port                = try(local.app_config.ingress.target_port, 80)
+    exposed_port               = try(local.app_config.ingress.exposed_port, null)
     external_enabled           = try(local.app_config.ingress.external_enabled, true)
+    transport                  = try(local.app_config.ingress.transport, "auto")
 
-    traffic_weight = [can(local.app_config.ingress.traffic_weight) ? {
-      label           = local.app_config.ingress.traffic_weight[0].label
-      latest_revision = local.app_config.ingress.traffic_weight[0].latest_revision
-      percentage      = local.app_config.ingress.traffic_weight[0].percentage
-      } : {
+    # IP security restrictions
+    ip_security_restriction = try(local.app_config.ingress.ip_security_restriction, null)
+
+    # Traffic weight configuration
+    traffic_weight = try(local.app_config.ingress.traffic_weight, [{
       label           = "latest-100"
       latest_revision = true
       percentage      = 100
-    }]
+    }])
   }
 
+  # Dapr configuration
   dapr = can(local.app_config.dapr) ? {
     app_id       = try(local.app_config.dapr.app_id, local.app_config.name)
     app_port     = try(local.app_config.dapr.app_port, null)
     app_protocol = try(local.app_config.dapr.app_protocol, "http")
   } : null
 
-  tags = try(local.app_config.tags, null)
+  # Custom domains configuration
+  custom_domains = try(local.app_config.custom_domains, {})
 
+  # Secrets configuration - support for Key Vault references and direct values
+  secrets = try(local.app_config.secrets, {})
+
+  # Authentication configurations
+  auth_configs = try(local.app_config.auth_configs, {})
+
+  # Resource locks
+  lock = try(local.app_config.lock, null)
+
+  # Role assignments
+  role_assignments = try(local.app_config.role_assignments, {})
+
+  # Timeouts for container app operations
   container_app_timeouts = try(local.app_config.container_app_timeouts, {
     create = "30m"
     update = "30m"
@@ -70,7 +160,11 @@ module "containerapp" {
     delete = "30m"
   })
 
+  # Workload profile name
   workload_profile_name = try(local.app_config.workload_profile_name, "Consumption")
+
+  # Tags for the container app
+  tags = try(local.app_config.tags, null)
 
   # This is about Telemetry for Microsoft Azure Verified Module usage, not application telemetry
   # https://registry.terraform.io/providers/Azure/avm/latest/docs#enable_telemetry

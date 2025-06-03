@@ -54,12 +54,12 @@ variable "remote_tfstate_key" {
 
 variable "image_name" {
   type        = string
-  description = "The name of the container image to deploy"
+  description = "The name of the container image to deploy (typically set by GitHub workflow). Can be overridden by setting the image property in the YAML configuration."
 }
 
 variable "image_tag" {
   type        = string
-  description = "The tag of the container image to deploy"
+  description = "The tag of the container image to deploy (typically set by GitHub workflow). Can be overridden by setting the image property in the YAML configuration."
 }
 
 variable "appgw_dns_name" {
