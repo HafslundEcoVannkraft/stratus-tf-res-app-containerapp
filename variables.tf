@@ -61,3 +61,9 @@ variable "image_tag" {
   type        = string
   description = "The tag of the container image to deploy"
 }
+
+variable "appgw_dns_name" {
+  type        = string
+  description = "The Public DNS A record of the Application Gateway"
+  default     = "appgw01.stratus.hafslund.no"
+}

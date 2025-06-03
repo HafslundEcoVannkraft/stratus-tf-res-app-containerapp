@@ -8,6 +8,8 @@ module "containerapp" {
   revision_mode                         = local.app_config.revision_mode
 
   template = {
+    max_replicas = try(local.app_config.template.max_replicas, 10)
+    min_replicas = try(local.app_config.template.min_replicas, 1)
     containers = [
       {
         name   = local.app_config.name
