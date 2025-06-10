@@ -75,4 +75,9 @@ module "containerapp" {
   # This is about Telemetry for Microsoft Azure Verified Module usage, not application telemetry
   # https://registry.terraform.io/providers/Azure/avm/latest/docs#enable_telemetry
   enable_telemetry = try(local.app_config.enable_telemetry, true)
+
+  depends_on = [
+    azurerm_role_assignment.aca_container_registry_pull,
+    azurerm_role_assignment.aca_storage_blob_data_contributor
+  ]
 }
