@@ -18,8 +18,16 @@ module "containerapp" {
     # Container configuration - support all properties from YAML
     containers = [
       for container in try(local.app_config.template.containers, [{}]) : {
-        name    = try(container.name, local.app_config.name)
-        image   = try(container.image, "${var.image_name}:${var.image_tag}") # Uses image from YAML if specified, otherwise from GitHub workflow variables
+        name = try(container.name, local.app_config.name)
+        # Image resolution priority:
+        # 1. Image specified in YAML (for pre-built images)
+        # 2. Image from container_images map (for workflow-built images)
+        # 3. Image from previous state (for destroy operations)
+        image = coalesce(
+          try(container.image, null),                                                                                                # Priority 1: YAML-specified image
+          try(lookup(var.container_images, try(container.name, local.app_config.name), null), null),                                 # Priority 2: From container_images map
+          try(lookup(data.terraform_remote_state.self.outputs.container_images, try(container.name, local.app_config.name), ""), "") # Priority 3: From previous state
+        )
         memory  = try(container.memory, "0.5Gi")
         cpu     = try(container.cpu, "0.25")
         args    = try(container.args, null)
@@ -175,3 +183,15 @@ module "containerapp" {
     azurerm_role_assignment.aca_storage_blob_data_contributor
   ]
 }
+
+# Optional: Add validation using check blocks (requires Terraform 1.5+)
+# Uncomment if you want explicit validation
+# check "container_images_provided" {
+#   assert {
+#     condition = alltrue([
+#       for container in try(local.app_config.template.containers, []) : 
+#       can(container.image) || can(lookup(var.container_images, try(container.name, local.app_config.name), null))
+#     ])
+#     error_message = "All containers must have an image specified either in YAML or via container_images variable."
+#   }
+# }

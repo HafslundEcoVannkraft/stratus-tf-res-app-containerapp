@@ -53,3 +53,38 @@ output "container_app_identity" {
   description = "The User Assigned Managed Identity created for the Container App."
   value       = module.container_app_identity_for_registry
 }
+
+output "containers" {
+  description = "The containers configuration of the Container App, including names and images."
+  value = [
+    for container in try(module.containerapp.resource.template[0].container, []) : {
+      name   = container.name
+      image  = container.image
+      cpu    = container.cpu
+      memory = container.memory
+    }
+  ]
+}
+
+output "container_images" {
+  description = "Map of container names to their current images."
+  value = {
+    for container in try(module.containerapp.resource.template[0].container, []) :
+    container.name => container.image
+  }
+}
+
+output "template" {
+  description = "The complete template configuration of the Container App."
+  value       = try(module.containerapp.resource.template[0], null)
+}
+
+output "app_config" {
+  description = "The parsed app.yaml configuration used for this deployment."
+  value       = local.app_config
+}
+
+output "container_app_environment_id" {
+  description = "The ID of the Container App Environment where this app is deployed."
+  value       = local.container_app_environment_id
+}

@@ -9,4 +9,20 @@ data "terraform_remote_state" "container_app_environment" {
   }
 }
 
+# Reference our own state to get previous container images (useful during destroy)
+data "terraform_remote_state" "self" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = var.state_storage_account_name
+    storage_account_name = var.state_storage_account_name
+    container_name       = "tfstate"
+    key                  = "apps/${var.environment}/${local.app_config.name}"
+  }
+
+  defaults = {
+    container_images = {}
+  }
+}
+
 

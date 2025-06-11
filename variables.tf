@@ -52,14 +52,10 @@ variable "remote_tfstate_key" {
   default     = null
 }
 
-variable "image_name" {
-  type        = string
-  description = "The name of the container image to deploy (typically set by GitHub workflow). Can be overridden by setting the image property in the YAML configuration."
-}
-
-variable "image_tag" {
-  type        = string
-  description = "The tag of the container image to deploy (typically set by GitHub workflow). Can be overridden by setting the image property in the YAML configuration."
+variable "container_images" {
+  type        = map(string)
+  description = "Map of container names to fully qualified image URLs (e.g., registry.azurecr.io/app-name:tag). Used for multi-container support."
+  default     = {}
 }
 
 variable "appgw_dns_name" {
