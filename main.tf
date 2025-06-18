@@ -179,8 +179,7 @@ module "containerapp" {
   enable_telemetry = try(local.app_config.enable_telemetry, true)
 
   depends_on = [
-    azurerm_role_assignment.aca_container_registry_pull,
-    azurerm_role_assignment.aca_storage_blob_data_contributor
+    azurerm_role_assignment.aca_container_registry_pull
   ]
 }
 
@@ -189,7 +188,7 @@ module "containerapp" {
 # check "container_images_provided" {
 #   assert {
 #     condition = alltrue([
-#       for container in try(local.app_config.template.containers, []) : 
+#       for container in try(local.app_config.template.containers, []) :
 #       can(container.image) || can(lookup(var.container_images, try(container.name, local.app_config.name), null))
 #     ])
 #     error_message = "All containers must have an image specified either in YAML or via container_images variable."
