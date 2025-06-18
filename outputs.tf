@@ -12,6 +12,7 @@ output "name" {
 output "custom_domain_verification_id" {
   description = "The ID to be used for domain verification."
   value       = module.containerapp.resource.custom_domain_verification_id
+  sensitive = true
 }
 
 output "latest_revision_name" {
