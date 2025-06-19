@@ -179,6 +179,7 @@ module "containerapp" {
   enable_telemetry = try(local.app_config.enable_telemetry, true)
 
   depends_on = [
+    azurerm_role_assignment.aca_container_registry_pull
   ]
 }
 
