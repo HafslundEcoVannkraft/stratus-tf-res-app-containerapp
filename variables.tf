@@ -55,7 +55,7 @@ variable "remote_tfstate_key" {
 variable "container_images" {
   type        = map(string)
   description = "Map of container names to fully qualified image URLs (e.g., registry.azurecr.io/app-name:tag). Used for multi-container support."
-  default     = {}
+  default     = null
 }
 
 variable "appgw_dns_name" {
