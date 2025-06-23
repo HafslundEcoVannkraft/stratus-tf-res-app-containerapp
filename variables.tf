@@ -57,9 +57,3 @@ variable "container_images" {
   description = "Map of container names to fully qualified image URLs (e.g., registry.azurecr.io/app-name:tag). Used for multi-container support."
   default     = null
 }
-
-variable "appgw_dns_name" {
-  type        = string
-  description = "The Public DNS A record of the Application Gateway"
-  default     = "appgw01.stratus.hafslund.no"
-}
