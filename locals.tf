@@ -6,15 +6,15 @@ locals {
   # Resource names
   app_identity_name = "${var.code_name}-id-${local.app_config.name}-${var.environment}"
 
-  # Target environment configuration - set this to match your desired deployment target
-  # You only need to differentiate this if you have multiple container app environments in the remote state output
-  deployment_target = "default"
+  # Target environment configuration - this identifies which container app environment to use
+  # This allows targeting a specific environment when multiple environments exist in the remote state
+  container_app_environment_target = try(local.app_config.container_app_environment_target, "ace1")
 
-  # Extract specific config by deployment_target
+  # Extract specific config by container_app_environment_target
   # Note: container_apps_config is an array of objects where each object represents a deployment target configuration
   cae_config = [
     for config in data.terraform_remote_state.container_app_environment.outputs.container_apps_config :
-    config if lookup(config.metadata, "deployment_target", "") == local.deployment_target
+    config if lookup(config.metadata, "deployment_target", "") == local.container_app_environment_target
   ][0]
 
   # Container Apps Environment Configuration

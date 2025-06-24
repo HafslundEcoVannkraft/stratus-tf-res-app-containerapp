@@ -52,18 +52,8 @@ variable "remote_tfstate_key" {
   default     = null
 }
 
-variable "image_name" {
-  type        = string
-  description = "The name of the container image to deploy"
-}
-
-variable "image_tag" {
-  type        = string
-  description = "The tag of the container image to deploy"
-}
-
-variable "appgw_dns_name" {
-  type        = string
-  description = "The Public DNS A record of the Application Gateway"
-  default     = "appgw01.stratus.hafslund.no"
+variable "container_images" {
+  type        = map(string)
+  description = "Map of container names to fully qualified image URLs (e.g., registry.azurecr.io/app-name:tag). Used for multi-container support."
+  default     = null
 }

@@ -9,31 +9,41 @@ module "container_app_identity_for_registry" {
   enable_telemetry    = true
 }
 
-# Role assignement keyvault certificate user permission assigned to the managed identity for the environment
+# Default role assignment for ACR access - always needed for container apps
 resource "azurerm_role_assignment" "aca_container_registry_pull" {
   scope                = local.container_registry_id
   role_definition_name = "AcrPull"
   principal_id         = module.container_app_identity_for_registry.principal_id
 }
 
+# Dynamic System-Assigned Identity Role Assignments from remote state
+resource "azurerm_role_assignment" "system_assigned_roles" {
+  for_each = {
+    for idx, role_assignment in try(local.cae_config.SystemAssignedIdentityRoles, []) :
+    "${role_assignment.role}-${idx}" => role_assignment
+  }
 
-# We can use the System assigned managed identity for the container app, role assignments
-
-resource "azurerm_role_assignment" "aca_storage_blob_data_contributor" {
-  scope                = local.storage_account_id
-  role_definition_name = "Storage Blob Data Contributor"
+  scope                = each.value.scope
+  role_definition_name = each.value.role
   principal_id         = module.containerapp.resource.identity[0].principal_id
+
+  # Only create after the container app is fully deployed with its system-assigned identity
+  depends_on = [
+    module.containerapp
+  ]
 }
 
-# Enable this if the App need table or queue storage access, table and queue is not configured as dapr services
-# resource "azurerm_role_assignment" "aca_storage_table_data_contributor" {
-#   scope                = local.storage_account_id
-#   role_definition_name = "Storage Table Data Contributor"
-#   principal_id         = module.containerapp.resource.identity[0].principal_id
-# }
+# Dynamic User-Assigned Identity Role Assignments from remote state
+# Note: This is in addition to the default AcrPull role above
+resource "azurerm_role_assignment" "user_assigned_roles" {
+  for_each = {
+    for idx, role_assignment in try(local.cae_config.UserAssignedIdentityRoles, []) :
+    # Skip the AcrPull role as it's already assigned above
+    "${role_assignment.role}-${idx}" => role_assignment
+    if role_assignment.role != "AcrPull"
+  }
 
-# resource "azurerm_role_assignment" "aca_storage_queue_data_contributor" {
-#   scope                = local.storage_account_id
-#   role_definition_name = "Storage Queue Data Contributor"
-#   principal_id         = module.containerapp.resource.identity[0].principal_id
-# }
+  scope                = each.value.scope
+  role_definition_name = each.value.role
+  principal_id         = module.container_app_identity_for_registry.principal_id
+}
