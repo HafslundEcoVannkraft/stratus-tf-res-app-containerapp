@@ -55,52 +55,25 @@ This can be useful for:
 - Using pre-built images from other repositories
 - Multi-stage deployments with different images
 
-### Variable Substitution
-
-The YAML configuration supports variable substitution, allowing you to reference values from various sources:
-
-```yaml
-env:
-  - name: "DB_CONNECTION"
-    value: "${kv:database-connection}" # From Azure KeyVault
-  - name: "API_KEY"
-    value: "${secrets:api_key!}" # Required secret from GitHub Secrets
-  - name: "LOG_LEVEL"
-    value: "${vars:LOG_LEVEL:INFO}" # From GitHub Variables with default
-```
-
-Variable sources are checked in this order:
-
-1. GitHub Repository/Environment Variables (`vars:`)
-2. GitHub Repository/Environment Secrets (`secrets:`)
-3. Azure KeyVault (`kv:`)
-4. GitHub Runner Environment Variables (`env:`)
-
-For detailed information on variable substitution syntax and features, see the [YAML Schema Documentation](doc/yaml_schema.md#variable-substitution) and [Variable Substitution Examples](doc/variable_substitution.md).
-
 ### Multi-Environment Support
 
-The module supports targeting specific container app environments in a remote state when multiple environments exist. This is particularly useful in Stratus Landing Zones where you might have different environments (dev, test, prod) or different types of environments within the same state file.
+The module supports targeting specific container app environments in a remote state when multiple environments exist. This is particularly useful in Stratus Landing Zones where you might have different different types of environments within the same state file.
 
-To specify which environment to target, use the `container_app_environment_target` property in your YAML configuration:
+To specify which environment to target configure this, defaults to ace1 who is also the default in stratus-tf-examples when creating a Azure Container App Environment
 
 ```yaml
-# Target a specific environment in the remote state
-container_app_environment_target: "production"
+container_app_environment_target: ace1
 ```
 
 This will match against the `deployment_target` metadata property in the container apps configuration from the remote state.
 
-### Sample Configuration
-
-A complete sample configuration file is available at [doc/sample_app.yaml](doc/sample_app.yaml). You can use this as a starting point for your own configuration.
 
 ### Example Configuration
 
 ```yaml
 name: "sample-app"
 revision_mode: "Single"
-container_app_environment_target: "default" # Target a specific environment when multiple exist
+container_app_environment_target: ace1 # Target a specific environment when multiple exist
 
 # Note: resource_group_name and container_app_environment_resource_id are now
 # automatically sourced from remote state
@@ -126,11 +99,27 @@ dapr:
   app_protocol: "http"
 ```
 
-## Examples
+### Variable Substitution (TODO: Planed for next release)
 
-- [Simple Container App](doc/simple_example.md) - Basic configuration with external ingress
-- [Complex Container App](doc/complex_example.md) - Advanced configuration with authentication, custom domains, and scaling rules
-- [Variable Substitution](doc/variable_substitution.md) - Examples of using variables and secrets in your configuration
+The YAML configuration supports variable substitution, allowing you to reference values from various sources:
+
+```yaml
+env:
+  - name: "DB_CONNECTION"
+    value: "${kv:database-connection}" # From Azure KeyVault
+  - name: "API_KEY"
+    value: "${secrets:api_key!}" # Required secret from GitHub Secrets
+  - name: "LOG_LEVEL"
+    value: "${vars:LOG_LEVEL:INFO}" # From GitHub Variables with default
+```
+
+Variable sources are checked in this order:
+
+1. GitHub Repository/Environment Variables (`vars:`)
+2. GitHub Repository/Environment Secrets (`secrets:`)
+3. Azure KeyVault (`kv:`)
+4. GitHub Runner Environment Variables (`env:`)
+
 
 <!-- markdownlint-disable MD033 -->
 

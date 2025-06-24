@@ -8,7 +8,7 @@ module "containerapp" {
   container_app_environment_resource_id = local.container_app_environment_id # Sourced from remote state
   revision_mode                         = local.app_config.revision_mode
 
-  # Template configuration with comprehensive support for all properties
+  # Template configuration with support for all properties
   template = {
     # Basic template properties
     max_replicas    = try(local.app_config.template.max_replicas, 10)
@@ -33,8 +33,13 @@ module "containerapp" {
         args    = try(container.args, null)
         command = try(container.command, null)
 
-        # Environment variables
-        env = try(container.env, null)
+        # Environment variables - merge global variables from container app environment with container-specific variables
+        env = concat(
+          # Global environment variables from remote state container app environment
+          try(local.cae_config.variables, []),
+          # Container-specific environment variables from YAML
+          try(container.env, [])
+        )
 
         # Health probes - convert from YAML structure to module structure
         liveness_probes = try([
