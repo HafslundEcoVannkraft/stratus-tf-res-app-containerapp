@@ -33,6 +33,8 @@ The following resources are automatically retrieved from the remote state:
 - Log Analytics workspace
 - Application Insights
 - DNS zones
+- Role assignments for system and user-assigned identities
+- Global environment variables
 
 ### GitHub Workflow Integration
 
@@ -65,6 +67,25 @@ container_app_environment_target: ace1
 
 This will match against the `deployment_target` metadata property in the container apps configuration from the remote state.
 
+### Dynamic Role Assignments
+
+The module automatically configures role assignments based on the remote state output from the container app environment. This includes:
+
+1. **System-Assigned Identity Roles**: Roles defined in the `SystemAssignedIdentityRoles` array in the remote state are automatically assigned to the container app's system-assigned identity.
+
+2. **User-Assigned Identity Roles**: Roles defined in the `UserAssignedIdentityRoles` array in the remote state are automatically assigned to the container app's user-assigned identity.
+
+This approach ensures that container apps have the appropriate permissions to interact with other Azure resources without manual configuration for each app.
+
+### Environment Variables
+
+Environment variables can be defined at two levels:
+
+1. **Global Environment Variables**: Defined in the remote state's container app environment configuration as `variables`. These are automatically applied to all containers.
+
+2. **Container-Specific Environment Variables**: Defined in the app.yaml file for each container.
+
+The module automatically merges these two sources, with container-specific variables taking precedence in case of conflicts. This allows common configuration to be defined once at the environment level while still allowing container-specific customization.
 
 ### Example Configuration
 
@@ -83,9 +104,15 @@ template:
     - # image: "myregistry.azurecr.io/sample-app:v1.0" # Uncomment to override the image built by GitHub workflow
       cpu: 0.5
       memory: "1Gi"
+      # Container-specific environment variables (merged with global variables from remote state)
       env:
         - name: "ENVIRONMENT"
           value: "production"
+        - name: "LOG_LEVEL"
+          value: "INFO"
+        # This would override any KEY_VAULT_URI from global variables
+        - name: "API_VERSION"
+          value: "v2"
 
 ingress:
   external_enabled: true
