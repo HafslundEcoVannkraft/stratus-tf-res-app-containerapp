@@ -8,7 +8,7 @@ locals {
 
   # Target environment configuration - this identifies which container app environment to use
   # This allows targeting a specific environment when multiple environments exist in the remote state
-  container_app_environment_target = try(local.app_config.container_app_environment_target, "ace1")
+  container_app_environment_target = try(local.app_config.container_app_environment_target, "cae1")
 
   # Extract specific config by container_app_environment_target
   # Note: container_apps_config is an array of objects where each object represents a deployment target configuration
